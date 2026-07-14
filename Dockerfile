@@ -21,15 +21,11 @@ RUN go mod download
 COPY . .
 RUN go build -o inbox .
 
-FROM dyne/devuan:daedalus
+FROM dyne/devuan:chimaera
 WORKDIR /root
 ENV HOST=0.0.0.0
 ENV PORT=80
 EXPOSE 80
-
-# Install OpenSSL runtime libraries (needed by tarantool Go client)
-RUN apt-get update && apt-get install -y libssl3 && rm -rf /var/lib/apt/lists/*
-
 COPY --from=builder /app/inbox /root/
 COPY --from=builder /usr/local/bin/zencode-exec /usr/local/bin/zencode-exec
 CMD ["/root/inbox"]
