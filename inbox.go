@@ -62,7 +62,6 @@ type Inbox struct {
 func CORS() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
 		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With, zenflows-sign, zenflows-id, zenflows-user, zenflows-hash")
 		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE")
 
@@ -120,6 +119,14 @@ func (inbox *Inbox) sendHandler(c *gin.Context) {
 	err = zenroomData.isAuth()
 	if err != nil {
 		result["error"] = err.Error()
+		return
+	}
+
+	// Verify sender identity matches the authenticated user header
+	senderIdentity := c.Request.Header.Get("zenflows-user")
+	if senderIdentity != "" && senderIdentity != message.Sender {
+		result["error"] = "Sender identity mismatch"
+		c.Writer.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
