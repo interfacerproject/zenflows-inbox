@@ -1,13 +1,16 @@
-FROM dyne/devuan:daedalus AS zenroom
-RUN apt update && apt install -y build-essential git cmake python3 \
-        && git clone --depth 1 --branch v4.44.0 https://github.com/dyne/Zenroom.git /zenroom
-RUN cd /zenroom && make linux-lib
+FROM golang:1.24-bullseye AS builder
+ENV GONOPROXY=
 
-FROM golang:1.24-bookworm AS builder
-RUN apt-get update && apt-get install -y libssl-dev
-COPY --from=zenroom /zenroom/libzenroom.so /usr/lib/
-COPY --from=zenroom /usr/lib/x86_64-linux-gnu/libssl.so* /usr/lib/x86_64-linux-gnu/
-COPY --from=zenroom /usr/lib/x86_64-linux-gnu/libcrypto.so* /usr/lib/x86_64-linux-gnu/
+# Download pre-built zencode-exec from Zenroom releases (same as interfacer-dpp)
+RUN ARCH=$(uname -m) && \
+    if [ "$ARCH" = "x86_64" ]; then \
+        wget -O /usr/local/bin/zencode-exec \
+            "https://github.com/dyne/zenroom/releases/latest/download/zencode-exec" && \
+        chmod +x /usr/local/bin/zencode-exec; \
+    else \
+        echo "Unsupported architecture: $ARCH" && exit 1; \
+    fi
+
 WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
@@ -21,7 +24,5 @@ ENV HOST=0.0.0.0
 ENV PORT=80
 EXPOSE 80
 COPY --from=builder /app/inbox /root/
-COPY --from=zenroom /zenroom/libzenroom.so /usr/lib/
-COPY --from=zenroom /usr/lib/x86_64-linux-gnu/libssl.so* /usr/lib/x86_64-linux-gnu/
-COPY --from=zenroom /usr/lib/x86_64-linux-gnu/libcrypto.so* /usr/lib/x86_64-linux-gnu/
+COPY --from=builder /usr/local/bin/zencode-exec /usr/local/bin/zencode-exec
 CMD ["/root/inbox"]

@@ -3,10 +3,7 @@ module github.com/dyne/zenflows-inbox
 go 1.18
 
 require (
-	github.com/dyne/Zenroom/bindings/golang/zenroom v0.0.0-20221011162848-b675846b230e
-	github.com/gin-contrib/cors v1.4.0
 	github.com/gin-gonic/gin v1.8.2
-	github.com/go-fed/activity v1.0.0
 	github.com/tarantool/go-tarantool v1.10.0
 )
 

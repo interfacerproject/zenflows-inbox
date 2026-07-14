@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	zenroom "github.com/dyne/Zenroom/bindings/golang/zenroom"
 	"io"
 	"net/http"
 	"os"
@@ -40,7 +39,7 @@ type ZenflowsAgent struct {
 func (za *ZenflowsAgent) signRequest(jsonData []byte) (string, string) {
 	data := fmt.Sprintf(`{"gql": "%s"}`, b64.StdEncoding.EncodeToString(jsonData))
 	keys := fmt.Sprintf(`{"keyring": {"eddsa": "%s"}}`, za.Sk)
-	result, success := zenroom.ZencodeExec(SIGN, "", data, keys)
+	result, success := callZencode(SIGN, "", data, keys)
 	if !success {
 		panic(result.Logs)
 	}
