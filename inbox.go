@@ -55,6 +55,10 @@ type Inbox struct {
 	zenflowsAgent ZenflowsAgent
 }
 
+// CORS middleware for inbox HTTP endpoints.
+// NB: keep Access-Control-Allow-Headers in sync with the headers
+// sent by @dyne/interfacer-client SDK's signGraphQLRequest:
+//   zenflows-sign, zenflows-user, zenflows-hash
 func CORS() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
