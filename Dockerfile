@@ -18,7 +18,7 @@ RUN go mod download
 COPY . .
 RUN go build -o inbox .
 
-FROM dyne/devuan:chimaera
+FROM dyne/devuan:daedalus
 WORKDIR /root
 ENV HOST=0.0.0.0
 ENV PORT=80
