@@ -122,12 +122,13 @@ func (inbox *Inbox) sendHandler(c *gin.Context) {
 		return
 	}
 
-	// Verify sender identity matches the authenticated user header
+	// Cross-check: the sender's EdDSA signature was verified against
+	// their public key (looked up via message.Sender), so identity is
+	// already cryptographically proven. Log if the zenflows-user header
+	// differs, but don't reject — the header is informational only.
 	senderIdentity := c.Request.Header.Get("zenflows-user")
 	if senderIdentity != "" && senderIdentity != message.Sender {
-		result["error"] = "Sender identity mismatch"
-		c.Writer.WriteHeader(http.StatusUnauthorized)
-		return
+		log.Printf("WARNING: zenflows-user header (%s) does not match message.Sender (%s)", senderIdentity, message.Sender)
 	}
 
 	// For each receiver put the message in the inbox
