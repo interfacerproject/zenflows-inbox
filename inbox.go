@@ -409,14 +409,9 @@ type Activity struct {
 //		"published": "2014-09-30T12:34:56Z"
 //	}
 func (inbox *Inbox) outboxPostHandler(c *gin.Context) {
-	result := map[string]interface{}{
-		"success": false,
-	}
-	defer c.JSON(http.StatusOK, result)
-
 	body, err := io.ReadAll(c.Request.Body)
 	if err != nil {
-		result["error"] = err.Error()
+		c.JSON(http.StatusBadRequest, map[string]interface{}{"success": false, "error": err.Error()})
 		return
 	}
 
@@ -424,11 +419,26 @@ func (inbox *Inbox) outboxPostHandler(c *gin.Context) {
 
 	var activity Activity
 	if err := json.Unmarshal(body, &activity); err != nil {
-		result["error"] = err.Error()
+		c.JSON(http.StatusBadRequest, map[string]interface{}{"success": false, "error": err.Error()})
 		return
 	}
 
 	baseUrl := fmt.Sprintf("%s/person/%s", os.Getenv("BASE_URL"), id)
+
+	// Authorize before any mutation: the caller must hold :id's registered key
+	// (proven against zenflows), and may only publish under their own actor.
+	// Unlike the body-signalled failures below, this returns a real 4xx so a
+	// client that only checks res.ok (e.g. the SDK SocialClient) surfaces the
+	// denial instead of treating it as success.
+	if status, err := authorizeOutbox(inbox.proveActor, body, c.Request.Header.Get("zenflows-sign"), id, activity, baseUrl); err != nil {
+		c.JSON(status, map[string]interface{}{"success": false, "error": err.Error()})
+		return
+	}
+
+	result := map[string]interface{}{
+		"success": false,
+	}
+	defer c.JSON(http.StatusOK, result)
 	/*zfPerson, err := inbox.zenflowsAgent.GetPerson(id)
 	if err != nil {
 		result["error"] = err.Error()
