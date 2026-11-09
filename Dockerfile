@@ -1,4 +1,4 @@
-FROM golang:1.24-bullseye AS builder
+FROM golang:1.24-bookworm AS builder
 ENV GONOPROXY=
 
 # Build dependencies: libssl-dev for tarantool Go client, wget for zencode-exec
@@ -21,7 +21,10 @@ RUN go mod download
 COPY . .
 RUN go build -o inbox .
 
-FROM dyne/devuan:chimaera
+# Devuan 5 (Debian 12 base): the builder's OpenSSL 3 and glibc at runtime.
+FROM dyne/devuan:daedalus
+RUN apt-get update && apt-get install -y --no-install-recommends libssl3 ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 WORKDIR /root
 ENV HOST=0.0.0.0
 ENV PORT=80
